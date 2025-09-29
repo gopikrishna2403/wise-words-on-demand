@@ -1,0 +1,41 @@
+name: Webapp Infrastructure CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'webapp-infra/**'
+      - '.github/workflows/webapp-infra-ci.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'webapp-infra/**'
+      - '.github/workflows/webapp-infra-ci.yml'
+
+jobs:
+  terraform-validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+    
+    - name: Terraform Format Check
+      run: |
+        cd webapp-infra/terraform
+        terraform fmt -check -recursive
+    
+    - name: Terraform Init
+      run: |
+        cd webapp-infra/terraform
+        terraform init -backend=false
+    
+    - name: Terraform Validate
+      run: |
+        cd webapp-infra/terraform
+        terraform validate
