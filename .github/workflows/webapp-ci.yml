@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [ main, develop ]
     paths:
-      - 'app.py'
+      - 'app_factory.py'
+      - 'app/**'
       - 'config.py'
       - 'test_app.py'
       - 'requirements*.txt'
@@ -12,7 +13,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'app.py'
+      - 'app_factory.py'
+      - 'app/**'
       - 'config.py'
       - 'test_app.py'
       - 'requirements*.txt'
@@ -53,12 +55,16 @@ jobs:
       run: |
         python -m pytest test_app.py -v --tb=short
     
+    - name: Test app factory
+      run: |
+        python -c "from app_factory import create_app; app = create_app(); print('App factory test passed')"
+    
     - name: Run linting
       run: |
         pip install flake8
-        flake8 app.py config.py test_app.py --max-line-length=100 --exclude=venv
+        flake8 app_factory.py app/ config.py test_app.py --max-line-length=100 --exclude=venv
     
     - name: Check code formatting
       run: |
         pip install black
-        black --check --diff app.py config.py test_app.py
+        black --check --diff app_factory.py app/ config.py test_app.py
