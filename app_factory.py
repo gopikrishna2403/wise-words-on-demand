@@ -1,10 +1,12 @@
 """Flask application factory."""
 
-from flask import Flask
 import logging
-from config import Config
-from app.utils.database import init_database
+
+from flask import Flask
+
 from app.routes.main import register_routes
+from app.utils.database import init_database
+from config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,10 +29,10 @@ def initialize_app():
         return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = initialize_app()
     if app:
         logger.info("Starting Flask application...")
-        app.run(debug=True, host='0.0.0.0', port=5001)
+        app.run(debug=True, host="0.0.0.0", port=5001)
     else:
         logger.error("Failed to start application due to database initialization error.")

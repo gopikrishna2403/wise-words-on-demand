@@ -31,12 +31,12 @@
                 <form id="quoteForm">
                     <div class="mb-3">
                         <label for="quoteText" class="form-label">Quote Text <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="quoteText" name="quoteText" rows="3" required 
+                        <textarea class="form-control" id="quoteText" name="quoteText" rows="3" required
                                   placeholder="Enter the inspiring quote..."></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="author" class="form-label">Author <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="author" name="author" required 
+                        <input type="text" class="form-control" id="author" name="author" required
                                placeholder="Enter the author's name">
                     </div>
                     <div class="mb-3">
@@ -101,15 +101,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Load database stats
     loadStats();
-    
+
     // Quick inject button
     document.getElementById('quickInjectBtn').addEventListener('click', function() {
         const btn = this;
         const resultDiv = document.getElementById('quickInjectResult');
-        
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Injecting...';
-        
+
         fetch('/inject', {
             method: 'GET'
         })
@@ -147,18 +147,18 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Quick Inject 10 Quotes';
         });
     });
-    
+
     // Custom quote form
     document.getElementById('quoteForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this);
         const resultDiv = document.getElementById('formResult');
         const submitBtn = this.querySelector('button[type="submit"]');
-        
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
-        
+
         fetch('/add-quote', {
             method: 'POST',
             body: formData
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Quote';
         });
     });
-    
+
     function loadStats() {
         fetch('/stats')
         .then(response => response.json())
@@ -211,4 +211,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

@@ -10,35 +10,80 @@ on:
         description: 'Release version (e.g., v1.0.0)'
         required: true
         default: 'v1.0.0'
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - prod
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/wise-words-webapp
+  REGISTRY: wisewordsdevacr.azurecr.io
+  IMAGE_NAME: wise-words-webapp
 
 jobs:
-  build-and-test:
+  lint:
     runs-on: ubuntu-latest
-    outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-    
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8
+
+    - name: Run linting
+      run: |
+        flake8 app_factory.py app/ config.py test_app.py --max-line-length=100 --exclude=venv
+
+    - name: Check code formatting
+      run: |
+        pip install black
+        black --check --diff app_factory.py app/ config.py test_app.py
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Build and compile app
+      run: |
+        echo "Building Flask application..."
+        python -c "
+        from app_factory import create_app
+        app = create_app()
+        print('✅ Flask app created successfully')
+        print(f'App name: {app.name}')
+        print(f'Debug mode: {app.debug}')
+        print('✅ App build completed successfully')
+        "
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
@@ -46,53 +91,55 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-test.txt
-    
+
     - name: Run tests
       run: |
         python -m pytest test_app.py -v --tb=short
-    
+
     - name: Test app factory
       run: |
         python -c "from app_factory import create_app; app = create_app(); print('App factory test passed')"
-    
-    - name: Run linting
-      run: |
-        pip install flake8
-        flake8 app_factory.py app/ config.py test_app.py --max-line-length=100 --exclude=venv
-    
-    - name: Check code formatting
-      run: |
-        pip install black
-        black --check --diff app_factory.py app/ config.py test_app.py
-    
+
+  docker-build-push:
+    needs: [lint, build, test]
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
       with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Log in to Azure Container Registry
+      run: |
+        az acr login --name wisewordsdevacr
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
+          type=ref,event=tag,prefix=webapp-
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
           type=raw,value=latest,enable={{is_default_branch}}
-    
+
     - name: Build and push Docker image
       id: build
       uses: docker/build-push-action@v5
@@ -105,99 +152,17 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  deploy-dev:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.event.inputs.environment == 'dev' || (github.event_name == 'push' && contains(github.ref, 'webapp-v'))
-    environment: dev
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
-    
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
-    - name: Get AKS credentials
-      run: |
-        az aks get-credentials --resource-group wise-words-dev-aks --name wise-words-dev-aks --overwrite-existing
-    
-    - name: Deploy to AKS
-      run: |
-        # Update image tag in webapp-infra
-        cd webapp-infra/terraform
-        sed -i "s|image_tag = \".*\"|image_tag = \"${{ needs.build-and-test.outputs.image-tag }}\"|g" terraform.tfvars || true
-        
-        # Initialize and apply
-        terraform init
-        terraform plan
-        terraform apply -auto-approve
-    
-    - name: Verify deployment
-      run: |
-        kubectl get pods -n wise-words
-        kubectl get svc -n wise-words
-        kubectl get ingress -n wise-words
-
-  deploy-prod:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.event.inputs.environment == 'prod'
-    environment: prod
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
-    
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
-    - name: Get AKS credentials
-      run: |
-        az aks get-credentials --resource-group wise-words-prod-aks --name wise-words-prod-aks --overwrite-existing
-    
-    - name: Deploy to AKS
-      run: |
-        # Update image tag in webapp-infra
-        cd webapp-infra/terraform
-        sed -i "s|image_tag = \".*\"|image_tag = \"${{ needs.build-and-test.outputs.image-tag }}\"|g" terraform.tfvars || true
-        
-        # Initialize and apply
-        terraform init
-        terraform plan
-        terraform apply -auto-approve
-    
-    - name: Verify deployment
-      run: |
-        kubectl get pods -n wise-words
-        kubectl get svc -n wise-words
-        kubectl get ingress -n wise-words
-
   create-release:
-    needs: [build-and-test, deploy-dev]
+    needs: docker-build-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/webapp-v')
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    
+
     - name: Create Release
       uses: actions/create-release@v1
       env:
@@ -207,16 +172,10 @@ jobs:
         release_name: Webapp Release ${{ github.ref_name }}
         body: |
           ## Webapp Release ${{ github.ref_name }}
-          
-          ### Changes
-          - See commit history for detailed changes
-          
+
           ### Docker Image
-          - **Image**: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}`
-          - **Digest**: `${{ needs.build-and-test.outputs.image-digest }}`
-          
-          ### Deployment
-          - **Environment**: Development
-          - **Status**: Deployed successfully
+          - **Image**: `wisewordsdevacr.azurecr.io/wise-words-webapp:${{ github.ref_name }}`
+          - **Digest**: `${{ needs.docker-build-push.outputs.image-digest }}`
+
         draft: false
         prerelease: false
