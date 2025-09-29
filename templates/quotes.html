@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}All Quotes - Wise Words on Demand{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-list me-2"></i>All Quotes</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="fas fa-home me-1"></i>Back to Home
+            </a>
+        </div>
+
+        {% if quotes %}
+        <div class="row">
+            {% for quote in quotes %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <div class="flex-grow-1">
+                            <i class="fas fa-quote-left text-primary mb-2"></i>
+                            <p class="card-text fst-italic">"{{ quote[1] }}"</p>
+                        </div>
+                        <footer class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <cite class="text-muted">
+                                        <strong>{{ quote[2] }}</strong>
+                                        {% if quote[3] %}
+                                            <span class="badge bg-secondary ms-1">{{ quote[3] }}</span>
+                                        {% endif %}
+                                    </cite>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                {{ quote[4][:10] if quote[4] else 'N/A' }}
+                            </small>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-quote-left fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No quotes found</h4>
+                <p class="text-muted">Unable to fetch quotes from the database.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-home me-1"></i>Back to Home
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
