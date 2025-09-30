@@ -2,6 +2,16 @@ name: Webapp Release
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'app_factory.py'
+      - 'config.py'
+      - 'test_app.py'
+      - 'requirements*.txt'
+      - 'Dockerfile'
+      - 'templates/**'
     tags:
       - 'webapp-v*'
   workflow_dispatch:
@@ -155,7 +165,7 @@ jobs:
   create-release:
     needs: docker-build-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/webapp-v')
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/webapp-v') || github.ref == 'refs/heads/main')
 
     steps:
     - name: Checkout code
@@ -163,18 +173,32 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Generate Release Tag
+      id: release-tag
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          # For main branch pushes, create a timestamp-based tag
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          echo "tag_name=webapp-v1.0.0-${TIMESTAMP}" >> $GITHUB_OUTPUT
+          echo "release_name=Webapp Release v1.0.0-${TIMESTAMP}" >> $GITHUB_OUTPUT
+        else
+          # For tag pushes, use the existing tag
+          echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "release_name=Webapp Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Create Release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Webapp Release ${{ github.ref_name }}
+        tag_name: ${{ steps.release-tag.outputs.tag_name }}
+        release_name: ${{ steps.release-tag.outputs.release_name }}
         body: |
-          ## Webapp Release ${{ github.ref_name }}
+          ## ${{ steps.release-tag.outputs.release_name }}
 
           ### Docker Image
-          - **Image**: `wisewordsdevacr.azurecr.io/wise-words-webapp:${{ github.ref_name }}`
+          - **Image**: `wisewordsdevacr.azurecr.io/wise-words-webapp:${{ steps.release-tag.outputs.tag_name }}`
           - **Digest**: `${{ needs.docker-build-push.outputs.image-digest }}`
 
         draft: false
