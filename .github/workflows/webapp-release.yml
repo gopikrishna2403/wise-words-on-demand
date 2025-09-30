@@ -1,4 +1,4 @@
-name: Semantic Release
+name: Release
 
 permissions:
   contents: write
@@ -119,16 +119,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Semantic Release
-        id: semantic-release
-        uses: open-turo/actions-python/release@main
+      - uses: open-turo/actions-python/release@v1
+        id: release
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   docker-build-push:
-    needs: [release]
     runs-on: ubuntu-latest
     if: needs.release.outputs.new-release-published == 'true'
+    needs: [release]
 
     steps:
       - name: Checkout code
