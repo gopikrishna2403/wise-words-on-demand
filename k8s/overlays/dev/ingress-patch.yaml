@@ -4,11 +4,15 @@ metadata:
   name: wise-words-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
-  tls: []
+  tls:
+  - hosts:
+    - "4.242.79.210.nip.io"
+    secretName: wise-words-tls
   rules:
-  - host: wise-words-dev.example.com
+  - host: "4.242.79.210.nip.io"
     http:
       paths:
       - path: /

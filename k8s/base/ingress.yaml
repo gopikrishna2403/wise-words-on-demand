@@ -15,10 +15,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - wise-words.example.com
+    - "4.242.79.210.nip.io"
     secretName: wise-words-tls
   rules:
-  - host: wise-words.example.com
+  - host: "4.242.79.210.nip.io"  # Free wildcard DNS service
     http:
       paths:
       - path: /
