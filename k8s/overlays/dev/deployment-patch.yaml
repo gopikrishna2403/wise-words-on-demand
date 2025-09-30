@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wise-words-app
+spec:
+  template:
+    spec:
+      containers:
+      - name: wise-words-app
+        env:
+        - name: USE_AZURE_SQL
+          value: "true"
+        - name: DATABASE_PATH
+          value: "/app/data/quotes.db"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

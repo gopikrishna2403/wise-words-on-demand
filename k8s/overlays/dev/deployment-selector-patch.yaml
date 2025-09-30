@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wise-words-app
+spec:
+  selector:
+    matchLabels:
+      app: wise-words-app
+      app.kubernetes.io/name: wise-words-on-demand
+      app.kubernetes.io/part-of: quoteapp
+      environment: dev
+      app.kubernetes.io/instance: wise-words-dev
