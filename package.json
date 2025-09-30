@@ -1,0 +1,13 @@
+{
+  "name": "wise-words-on-demand",
+  "version": "1.0.0",
+  "description": "A Flask web application for serving wise quotes",
+  "private": true,
+  "scripts": {
+    "semantic-release": "semantic-release"
+  },
+  "devDependencies": {
+    "semantic-release": "^22.0.0",
+    "@open-turo/semantic-release-config": "^9.0.1"
+  }
+}
