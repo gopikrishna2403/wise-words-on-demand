@@ -30,4 +30,4 @@ images:
 
 replicas:
   - name: wise-words-app
-    count: 1
+    count: 3
