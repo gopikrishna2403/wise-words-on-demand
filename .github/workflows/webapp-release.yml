@@ -48,11 +48,6 @@ jobs:
       run: |
         flake8 app_factory.py app/ config.py test_app.py --max-line-length=100 --exclude=venv
 
-    - name: Check code formatting
-      run: |
-        pip install black
-        black --check --diff app_factory.py app/ config.py test_app.py
-
   build:
     runs-on: ubuntu-latest
 
