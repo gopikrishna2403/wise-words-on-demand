@@ -33,6 +33,6 @@ if __name__ == "__main__":
     app = initialize_app()
     if app:
         logger.info("Starting Flask application...")
-        app.run(debug=True, host="0.0.0.0", port=5001)
+        app.run(debug=True, host="0.0.0.0", port=5000)
     else:
         logger.error("Failed to start application due to database initialization error.")
