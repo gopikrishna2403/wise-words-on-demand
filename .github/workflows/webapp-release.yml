@@ -18,6 +18,7 @@ on:
       - 'templates/**'
       - 'package.json'
       - '.releaserc.json'
+      - 'k8s/**'
   workflow_dispatch:
 
 jobs:

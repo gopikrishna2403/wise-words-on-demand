@@ -141,7 +141,6 @@ secrets/
 
 # Local development
 local/
-dev/
 test-data/
 
 # IDE specific
