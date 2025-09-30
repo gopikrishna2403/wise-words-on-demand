@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Inject Quotes - Wise Words on Demand{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-4">
+            <h2><i class="fas fa-plus-circle me-2"></i>Inject Quotes</h2>
+            <p class="text-muted">Add new inspiring quotes to the database</p>
+        </div>
+
+        <!-- Quick Inject Button -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <h5 class="card-title">Quick Inject</h5>
+                <p class="card-text">Add 10 pre-selected inspiring quotes instantly</p>
+                <button id="quickInjectBtn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-bolt me-2"></i>Quick Inject 10 Quotes
+                </button>
+                <div id="quickInjectResult" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Manual Quote Entry -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Add Custom Quote</h5>
+            </div>
+            <div class="card-body">
+                <form id="quoteForm">
+                    <div class="mb-3">
+                        <label for="quoteText" class="form-label">Quote Text <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="quoteText" name="quoteText" rows="3" required
+                                  placeholder="Enter the inspiring quote..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="author" class="form-label">Author <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="author" name="author" required
+                               placeholder="Enter the author's name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">Select a category (optional)</option>
+                            <option value="Motivation">Motivation</option>
+                            <option value="Success">Success</option>
+                            <option value="Life">Life</option>
+                            <option value="Dreams">Dreams</option>
+                            <option value="Perseverance">Perseverance</option>
+                            <option value="Courage">Courage</option>
+                            <option value="Hope">Hope</option>
+                            <option value="Action">Action</option>
+                            <option value="Kindness">Kindness</option>
+                            <option value="Opportunity">Opportunity</option>
+                            <option value="Innovation">Innovation</option>
+                            <option value="Belief">Belief</option>
+                            <option value="Persistence">Persistence</option>
+                            <option value="Self-Improvement">Self-Improvement</option>
+                            <option value="Optimism">Optimism</option>
+                        </select>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-plus me-2"></i>Add Quote
+                        </button>
+                    </div>
+                </form>
+                <div id="formResult" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Current Stats -->
+        <div class="card mt-4">
+            <div class="card-body text-center">
+                <h5 class="card-title">Database Status</h5>
+                <div id="dbStats" class="row">
+                    <div class="col-md-6">
+                        <div class="stat-item">
+                            <i class="fas fa-quote-left fa-2x text-primary mb-2"></i>
+                            <h4 id="totalQuotes">Loading...</h4>
+                            <p class="text-muted">Total Quotes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-item">
+                            <i class="fas fa-users fa-2x text-success mb-2"></i>
+                            <h4 id="totalAuthors">Loading...</h4>
+                            <p class="text-muted">Unique Authors</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load database stats
+    loadStats();
+
+    // Quick inject button
+    document.getElementById('quickInjectBtn').addEventListener('click', function() {
+        const btn = this;
+        const resultDiv = document.getElementById('quickInjectResult');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Injecting...';
+
+        fetch('/inject', {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${data.message}<br>
+                        <strong>Added:</strong> ${data.quotes_added} quotes<br>
+                        <strong>Total:</strong> ${data.total_quotes} quotes
+                    </div>
+                `;
+                loadStats(); // Refresh stats
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error: ${error.message}
+                </div>
+            `;
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-bolt me-2"></i>Quick Inject 10 Quotes';
+        });
+    });
+
+    // Custom quote form
+    document.getElementById('quoteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const resultDiv = document.getElementById('formResult');
+        const submitBtn = this.querySelector('button[type="submit"]');
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
+
+        fetch('/add-quote', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${data.message}
+                    </div>
+                `;
+                this.reset();
+                loadStats(); // Refresh stats
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error: ${error.message}
+                </div>
+            `;
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Add Quote';
+        });
+    });
+
+    function loadStats() {
+        fetch('/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalQuotes').textContent = data.total_quotes || 0;
+            document.getElementById('totalAuthors').textContent = data.total_authors || 0;
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+        });
+    }
+});
+</script>
+{% endblock %}
