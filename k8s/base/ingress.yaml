@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wise-words-ingress
+  labels:
+    app: wise-words-app
+    app.kubernetes.io/name: wise-words-on-demand
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: quoteapp
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - wise-words.example.com
+    secretName: wise-words-tls
+  rules:
+  - host: wise-words.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wise-words-service
+            port:
+              number: 80

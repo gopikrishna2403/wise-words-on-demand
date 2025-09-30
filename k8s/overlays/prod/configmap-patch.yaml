@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wise-words-config
+data:
+  USE_AZURE_SQL: "true"
+  FLASK_ENV: "production"

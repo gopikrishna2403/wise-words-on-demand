@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: wise-words-pdb
+  labels:
+    app: wise-words-app
+    app.kubernetes.io/name: wise-words-on-demand
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: quoteapp
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: wise-words-app

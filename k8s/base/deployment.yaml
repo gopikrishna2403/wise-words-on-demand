@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wise-words-app
+  labels:
+    app: wise-words-app
+    app.kubernetes.io/name: wise-words-on-demand
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: quoteapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wise-words-app
+  template:
+    metadata:
+      labels:
+        app: wise-words-app
+        app.kubernetes.io/name: wise-words-on-demand
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: quoteapp
+    spec:
+      imagePullSecrets:
+      - name: acr-secret
+      containers:
+      - name: wise-words-app
+        image: wise-words-on-demand:latest
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        - name: FLASK_APP
+          value: "app_factory.py"
+        - name: USE_AZURE_SQL
+          value: "true"
+        envFrom:
+        - secretRef:
+            name: wise-words-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+      volumes:
+      - name: data-volume
+        emptyDir: {}
+      restartPolicy: Always

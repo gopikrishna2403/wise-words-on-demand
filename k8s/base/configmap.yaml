@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wise-words-config
+  labels:
+    app: wise-words-app
+    app.kubernetes.io/name: wise-words-on-demand
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: quoteapp
+data:
+  # Database configuration
+  DB_PORT: "1433"
+  DB_TIMEOUT: "30"
+  DB_LOGIN_TIMEOUT: "30"
+
+  # Application configuration
+  FLASK_ENV: "production"
+  FLASK_APP: "app_factory.py"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+  # Database mode (true for Azure SQL, false for SQLite)
+  USE_AZURE_SQL: "true"
+
+  # SQLite database path (used when USE_AZURE_SQL=false)
+  DATABASE_PATH: "/app/data/quotes.db"
