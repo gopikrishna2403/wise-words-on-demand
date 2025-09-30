@@ -34,7 +34,15 @@
                                 </div>
                             </div>
                             <small class="text-muted d-block mt-1">
-                                {{ quote[4].strftime('%Y-%m-%d') if quote[4] else 'N/A' }}
+                                {% if quote[4] %}
+                                    {% if quote[4] is string %}
+                                        {{ quote[4][:10] if quote[4]|length > 10 else quote[4] }}
+                                    {% else %}
+                                        {{ quote[4].strftime('%Y-%m-%d') }}
+                                    {% endif %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
                             </small>
                         </footer>
                     </div>
