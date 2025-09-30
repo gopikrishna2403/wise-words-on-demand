@@ -109,7 +109,6 @@ jobs:
   release:
     needs: [lint, build, test]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
       new-release-published: ${{ steps.release.outputs.new-release-published }}
       new-release-version: ${{ steps.release.outputs.new-release-version }}
