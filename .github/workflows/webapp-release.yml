@@ -166,3 +166,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trigger Kubernetes deployment update
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: update-webapp-image
+          client-payload: |
+            {
+              "image_tag": "${{ needs.release.outputs.new-release-version }}",
+              "image_name": "wisewordsdevacr.azurecr.io/wise-words-webapp",
+              "full_image": "wisewordsdevacr.azurecr.io/wise-words-webapp:${{ needs.release.outputs.new-release-version }}"
+            }

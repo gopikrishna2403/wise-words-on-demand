@@ -1,0 +1,58 @@
+name: Update Kubernetes Deployment
+
+on:
+  repository_dispatch:
+    types: [update-webapp-image]
+
+jobs:
+  update-deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} --name ${{ secrets.AKS_CLUSTER_NAME }} --overwrite-existing
+
+    - name: Update Kustomize image tag
+      run: |
+        echo "Updating Kustomize with image: ${{ github.event.client_payload.full_image }}"
+        # Update the base kustomization.yaml file with the new image tag
+        sed -i "s|newTag: .*|newTag: ${{ github.event.client_payload.image_tag }}|g" k8s/base/kustomization.yaml
+
+        # Also update the dev overlay if it exists
+        if [ -f "k8s/overlays/dev/kustomization.yaml" ]; then
+          sed -i "s|newTag: .*|newTag: ${{ github.event.client_payload.image_tag }}|g" k8s/overlays/dev/kustomization.yaml
+        fi
+
+        # Verify the changes
+        echo "Updated base kustomization.yaml:"
+        cat k8s/base/kustomization.yaml
+        if [ -f "k8s/overlays/dev/kustomization.yaml" ]; then
+          echo "Updated dev overlay kustomization.yaml:"
+          cat k8s/overlays/dev/kustomization.yaml
+        fi
+
+    - name: Apply Kustomize manifests
+      run: |
+        echo "Applying Kustomize manifests..."
+        # Apply the dev overlay by default, or base if no overlays
+        if [ -d "k8s/overlays/dev" ]; then
+          kubectl apply -k k8s/overlays/dev/
+        else
+          kubectl apply -k k8s/base/
+        fi
