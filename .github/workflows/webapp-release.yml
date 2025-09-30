@@ -134,6 +134,12 @@ jobs:
       run: |
         az acr login --name wisewordsdevacr
 
+    - name: Verify Dockerfile exists
+      run: |
+        ls -la Dockerfile
+        echo "Dockerfile contents:"
+        head -10 Dockerfile
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
@@ -150,7 +156,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
