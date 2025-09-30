@@ -1,0 +1,2 @@
+# Development dependencies
+pre-commit>=3.6.0

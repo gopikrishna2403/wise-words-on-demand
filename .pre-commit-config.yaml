@@ -26,3 +26,20 @@ repos:
     hooks:
       - id: isort
         args: [--profile=black, --line-length=100]
+  # Terraform hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.86.0
+    hooks:
+      # Terraform documentation generation
+      - id: terraform_docs
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+        files: terraform/.*\.tf$
+
+      # Terraform formatting
+      - id: terraform_fmt
+        args:
+          - --args=-recursive
+        files: terraform/.*\.tf$
